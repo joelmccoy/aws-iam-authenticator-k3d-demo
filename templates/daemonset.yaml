@@ -1,0 +1,95 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "aws-iam-authenticator.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "aws-iam-authenticator.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ include "aws-iam-authenticator.chart" . }}
+  annotations:
+    checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "aws-iam-authenticator.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        app.kubernetes.io/name: {{ include "aws-iam-authenticator.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      # run on the host network (don't depend on CNI)
+      hostNetwork: true
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      # run `aws-iam-authenticator server` with three volumes
+      # - config (mounted from the ConfigMap at /etc/aws-iam-authenticator/config.yaml)
+      # - state (persisted TLS certificate and keys, mounted from the host)
+      # - output (output kubeconfig to plug into your apiserver configuration, mounted from the host)
+      initContainers:
+      - name: chown
+        image: busybox
+        command: ['sh', '-c', 'chown 10000:10000 /var/aws-iam-authenticator; chown 10000:10000 /etc/kubernetes/aws-iam-authenticator;']
+        volumeMounts:
+        - name: state
+          mountPath: /var/aws-iam-authenticator/
+        - name: output
+          mountPath: /etc/kubernetes/aws-iam-authenticator/     
+
+      containers:
+      - name: aws-iam-authenticator
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: IfNotPresent
+        args:
+        # TODO: pass in the kubeconfig path as a variable
+        - server
+        - --config={{ .Values.volumes.config.mountPath }}config.yaml
+        - --state-dir={{ .Values.volumes.state.mountPath }}
+        - --kubeconfig-pregenerated=true
+        securityContext:
+          runAsUser: 10000
+          runAsGroup: 10000
+          fsGroup: 10000
+        # TODO: pass this in as a variable
+        env:
+          - name: AWS_REGION
+            value: us-east-1
+
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        volumeMounts:
+        - name: config
+          mountPath: {{ .Values.volumes.config.mountPath }}
+        - name: state
+          mountPath: {{ .Values.volumes.state.mountPath }}
+        - name: output
+          mountPath: {{ .Values.volumes.output.mountPath }}
+
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "aws-iam-authenticator.fullname" . }}
+      - name: output
+        hostPath:
+          path: {{ .Values.volumes.output.hostPath }}
+      - name: state
+        hostPath:
+          path: {{ .Values.volumes.state.hostPath }}

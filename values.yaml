@@ -1,0 +1,76 @@
+image:
+  # The image repository to use
+  repository: aws-iam-authenticator
+  # The image tag to use
+  tag: v0.5.9
+
+## -- A priority class to assign to the pods
+priorityClassName: "system-cluster-critical"
+
+volumes:
+  output:
+    mountPath: /etc/kubernetes/aws-iam-authenticator/
+    hostPath: /etc/kubernetes/aws-iam-authenticator/
+  state:
+    mountPath: /var/aws-iam-authenticator/
+    hostPath: /var/aws-iam-authenticator/
+  config:
+    mountPath: /etc/aws-iam-authenticator/
+
+# -- Node selection constraint
+nodeSelector:
+  # Run on each master node
+  node-role.kubernetes.io/master: "true"
+
+# -- Taint tolerations
+# @default -- Tolerate node-role.kubernetes.io/master and CriticalAddonsOnly
+tolerations:
+  # Allow execution on master nodes
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+  - key: CriticalAddonsOnly
+    operator: Exists
+
+## Use this to specify the entire configmap as an override if you don't want the default templated configmap.  Allows for more advanced configuration
+configMap:
+  clusterID: "test-aws"
+#   defaultRole: arn:aws:iam::000000000000:role/KubernetesAdmin
+  server:
+#     ec2DescribeInstancesRoleARN: arn:aws:iam::000000000000:role/DescribeInstancesRole
+    mapRoles:
+    - roleARN: arn:aws:iam::AWS_ACCOUNT:role/your-role
+      username: kubernetes-admin
+      groups:
+      - system:masters
+#     - roleARN: arn:aws:iam::000000000000:role/KubernetesNode
+#       username: aws:{{AccountID}}:instance:{{SessionName}}
+#       groups:
+#       - system:bootstrappers
+#       - aws:instances
+#     - roleARN: arn:aws:iam::000000000000:role/KubernetesNode
+#       username: system:node:{{EC2PrivateDNSName}}
+#       groups:
+#       - system:nodes
+#       - system:bootstrappers
+#     - roleARN: arn:aws:iam::000000000000:role/KubernetesAdmin
+#       username: admin:{{SessionName}}
+#       groups:
+#       - system:masters
+#     mapUsers:
+#     - userARN: arn:aws:iam::000000000000:user/Alice
+#       username: alice
+#       groups:
+#       - system:masters
+#     mapAccounts:
+#     - "012345678901"
+#     - "456789012345"
+
+
+# resource requests and limits
+resources:
+  requests:
+    memory: 20Mi
+    cpu: 10m
+  limits:
+    memory: 20Mi
+    cpu: 100m
