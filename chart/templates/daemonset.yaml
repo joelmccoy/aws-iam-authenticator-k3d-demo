@@ -59,7 +59,6 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: IfNotPresent
         args:
-        # TODO: pass in the kubeconfig path as a variable
         - server
         - --config={{ .Values.volumes.config.mountPath }}config.yaml
         - --state-dir={{ .Values.volumes.state.mountPath }}
@@ -68,10 +67,12 @@ spec:
           runAsUser: 10000
           runAsGroup: 10000
           fsGroup: 10000
-        # TODO: pass this in as a variable
+        # AWS_REGION should only be passed in if the AWS metadata service is not available (i.e. running outside of AWS)
+        {{- if .Values.awsRegion }}
         env:
           - name: AWS_REGION
-            value: us-east-1
+            value: {{ .Values.awsRegion }}
+        {{- end }}
 
         resources:
 {{ toYaml .Values.resources | indent 10 }}

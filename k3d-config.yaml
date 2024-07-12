@@ -1,15 +1,6 @@
 apiVersion: k3d.io/v1alpha2
 kind: Simple
 name: test-aws
-volumes:
-    # SET TO YOUR LOCAL PATH
-  - volume: /Users/jmccoy/dev/aws-iam-authenticator/pre-generated-config:/etc/kubernetes/aws-iam-authenticator
-    nodeFilters:
-      - server:0
-    # SET TO YOUR LOCAL PATH
-  - volume: /Users/jmccoy/dev/aws-iam-authenticator/certs:/var/aws-iam-authenticator
-    nodeFilters:
-      - server:0
 options:
   k3s: # options passed on to K3s itself
     extraServerArgs: # additional arguments passed to the `k3s server` command; same as `--k3s-server-arg`

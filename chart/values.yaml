@@ -31,6 +31,9 @@ tolerations:
   - key: CriticalAddonsOnly
     operator: Exists
 
+# -- Only should need to specific the AWS region if running outside of AWS or EC2 metadata service is not available
+awsRegion: "us-east-1"
+
 ## Use this to specify the entire configmap as an override if you don't want the default templated configmap.  Allows for more advanced configuration
 configMap:
   clusterID: "test-aws"
@@ -38,7 +41,7 @@ configMap:
   server:
 #     ec2DescribeInstancesRoleARN: arn:aws:iam::000000000000:role/DescribeInstancesRole
     mapRoles:
-    - roleARN: arn:aws:iam::AWS_ACCOUNT:role/your-role
+    - roleARN: arn:aws:iam::AWS_ACCOUNT:role/your-role 
       username: kubernetes-admin
       groups:
       - system:masters
