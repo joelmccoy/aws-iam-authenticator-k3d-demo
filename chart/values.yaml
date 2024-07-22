@@ -1,8 +1,8 @@
 image:
   # The image repository to use
-  repository: aws-iam-authenticator
+  repository: public.ecr.aws/eks-distro/kubernetes-sigs/aws-iam-authenticator
   # The image tag to use
-  tag: v0.5.9
+  tag: v0.6.20-eks-1-28-28
 
 ## -- A priority class to assign to the pods
 priorityClassName: "system-cluster-critical"
@@ -41,7 +41,7 @@ configMap:
   server:
 #     ec2DescribeInstancesRoleARN: arn:aws:iam::000000000000:role/DescribeInstancesRole
     mapRoles:
-    - roleARN: arn:aws:iam::AWS_ACCOUNT:role/your-role 
+    - roleARN: arn:aws:iam::835706769834:role/test-aws-iam-authenticator-jmccoy 
       username: kubernetes-admin
       groups:
       - system:masters

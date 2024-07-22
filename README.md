@@ -57,15 +57,6 @@ You will need to edit the `chart/values.yaml` file to add in the role you want t
 Deploy the helm chart:
 
 ```bash
-# Before deploying the chart... load docker image into k3d (as it comes from ECR)
-# Must have any valid AWS creds to pull from this image down
-# Login to the ECR registry that hosts this image
-aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin 602401143452.dkr.ecr.us-west-2.amazonaws.com
-
-docker pull 602401143452.dkr.ecr.us-west-2.amazonaws.com/amazon/aws-iam-authenticator:v0.5.9
-docker tag 602401143452.dkr.ecr.us-west-2.amazonaws.com/amazon/aws-iam-authenticator:v0.5.9 aws-iam-authenticator:v0.5.9
-k3d image import -c test-aws aws-iam-authenticator:v0.5.9
-
 # Deploy aws-iam-authenticator helm chart (which deploys daemonset and configmap to cluster)
 helm install aws-iam-authenticator ./chart
 ```
